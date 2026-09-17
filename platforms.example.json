@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Canvas",
+    "url": "https://yourinstitution.instructure.com",
+    "clientId": "REPLACE_WITH_CANVAS_DEVELOPER_KEY_CLIENT_ID",
+    "authenticationEndpoint": "https://yourinstitution.instructure.com/api/lti/authorize_redirect",
+    "accessTokenEndpoint": "https://yourinstitution.instructure.com/login/oauth2/token",
+    "idTokenValidation": { "method": "JWK_SET", "key": "https://yourinstitution.instructure.com/api/lti/security/jwks" }
+  },
+  {
+    "name": "Blackboard",
+    "url": "https://blackboard.com",
+    "clientId": "REPLACE_WITH_BLACKBOARD_APPLICATION_ID",
+    "authenticationEndpoint": "https://developer.blackboard.com/api/v1/gateway/oidcauth",
+    "accessTokenEndpoint": "https://developer.blackboard.com/api/v1/gateway/oauth2/jwttoken",
+    "idTokenValidation": { "method": "JWK_SET", "key": "https://developer.blackboard.com/api/v1/management/applications/REPLACE_WITH_APPLICATION_ID/jwks.json" }
+  },
+  {
+    "name": "Brightspace",
+    "url": "https://yourinstitution.brightspace.com",
+    "clientId": "REPLACE_WITH_BRIGHTSPACE_CLIENT_ID",
+    "authenticationEndpoint": "https://yourinstitution.brightspace.com/d2l/lti/authenticate",
+    "accessTokenEndpoint": "https://auth.brightspace.com/core/connect/token",
+    "idTokenValidation": { "method": "JWK_SET", "key": "https://yourinstitution.brightspace.com/d2l/.well-known/jwks" }
+  },
+  {
+    "name": "Schoology",
+    "url": "https://lti-service.svc.schoology.com",
+    "clientId": "REPLACE_WITH_SCHOOLOGY_CLIENT_ID",
+    "authenticationEndpoint": "https://lti-service.svc.schoology.com/lti-service/authorize-redirect",
+    "accessTokenEndpoint": "https://lti-service.svc.schoology.com/lti-service/access-token",
+    "idTokenValidation": { "method": "JWK_SET", "key": "https://lti-service.svc.schoology.com/lti-service/.well-known/jwks" }
+  }
+]

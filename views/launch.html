@@ -1,0 +1,182 @@
+<!doctype html>
+<!--
+  Served for both LTI launch shapes (Deep Linking and Resource Link - see src/server.js). The
+  same EqEditor UI every other adapter in this repo embeds; what "Insert" does depends on
+  which shape /config says this launch is.
+
+  Insert submits a real HTML form to /insert rather than fetching it, so that a Deep Linking
+  response - itself a small auto-submitting HTML page ltijs builds - can be received as a page
+  and let its own embedded script run, which does not happen for HTML received via fetch().
+-->
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CodeCogs Equation Editor</title>
+    <style>
+        body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin: 0; padding: 20px;
+               max-width: 720px; color: #1c2530; }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        p.hint { color: #52606d; font-size: 13px; margin-top: 0; }
+        #status { min-height: 18px; font-size: 13px; color: #b3261e; }
+        .cc-actions { margin-top: 12px; }
+        #insert-btn {
+            padding: 8px 20px; border-radius: 4px; border: 1px solid #2c7a4b;
+            background: #2c7a4b; color: #fff; cursor: pointer; font-size: 14px;
+        }
+        #insert-btn:disabled { opacity: 0.5; cursor: default; }
+    </style>
+</head>
+<body>
+    <h1>Insert an equation</h1>
+    <p class="hint" id="mode-hint">Loading...</p>
+
+    <div id="equation-editor" class="CCEqnEditor">
+        <div class="CCEditorBar"><div id="cc-history" class="CCHistory"></div></div>
+        <div id="cc-toolbar"></div>
+        <div id="cc-latex-input" class="CCLatexInput" autocorrect="off" placeholder="Write LaTeX here..."></div>
+        <div id="cc-mathview" class="CCMathViewHost"></div>
+        <div id="cc-toggle" class="CCViewToggle">
+            <label class="cc-switch" title="Show or hide the LaTeX markup above the equation">
+                <input type="checkbox" data-latex-toggle>
+                <span class="cc-switch-track"><span class="cc-switch-knob"></span></span>
+                <span class="cc-switch-label">LaTeX markup</span>
+            </label>
+        </div>
+        <div class="CCEqnOutput"><img id="cc-output" alt=""></div>
+    </div>
+
+    <div class="cc-actions">
+        <button id="insert-btn" disabled>Insert</button>
+    </div>
+    <div id="status"></div>
+
+    <form id="insert-form" method="POST" action="/insert" style="display:none">
+        <input type="hidden" name="ltik" id="form-ltik">
+        <input type="hidden" name="url" id="form-url">
+        <input type="hidden" name="latex" id="form-latex">
+    </form>
+
+    <script>
+        // Replaced server-side (see src/server.js's renderLaunchPage()) with this launch's
+        // own ltik - the token Provider.getLaunchContext() needs to resume it from /config
+        // and /insert, which run outside the original launch request.
+        var ltik = "__LTIK__";
+
+        var eqOutput, eqTextArea, eqMathView, eqToolbar;
+        var renderUrl = 'https://latex.codecogs.com';
+
+        // Remembers which view (maths or LaTeX markup) the author last chose, across opens and
+        // page loads - the same cookie name every other eqneditor-v5-plugins adapter uses. No
+        // cookie yet: fall back to this deployment's own configured default (/config, below),
+        // not hard-coded here.
+        var LATEX_COOKIE = 'cc_eqneditor_show_latex';
+        var latexCookieMatch = document.cookie.match( /(?:^|; )cc_eqneditor_show_latex=([^;]*)/ );
+        var showLatex = latexCookieMatch ? latexCookieMatch[ 1 ] === '1' : false;
+
+        function setShowLatexPreference( visible ) {
+            document.cookie = LATEX_COOKIE + '=' + ( visible ? '1' : '0' ) + '; path=/; max-age=31536000; SameSite=Lax';
+        }
+
+        function applyLatexVisible( visible ) {
+            showLatex = visible;
+            setShowLatexPreference( visible );
+
+            var root = document.getElementById( 'equation-editor' );
+            if ( root ) root.setAttribute( 'data-latex', visible ? 'on' : 'off' );
+
+            var box = document.querySelector( '#cc-toggle input[data-latex-toggle]' );
+            if ( box ) box.checked = visible;
+
+            if ( eqToolbar && !visible ) eqToolbar.setActiveTextArea( eqMathView || eqTextArea );
+        }
+
+        function setStatus( text ) {
+            document.getElementById( 'status' ).textContent = text || '';
+        }
+
+        function loadScript( url ) {
+            return new Promise( function ( resolve, reject ) {
+                var script = document.createElement( 'script' );
+                script.src = url;
+                script.onload = function () { resolve(); };
+                script.onerror = function () { reject( new Error( 'Could not load ' + url ) ); };
+                document.head.appendChild( script );
+            } );
+        }
+
+        function loadCss( url ) {
+            var link = document.createElement( 'link' );
+            link.rel = 'stylesheet';
+            link.href = url;
+            document.head.appendChild( link );
+        }
+
+        function mount( server ) {
+            loadCss( 'https://' + server + '/eqneditor.css' );
+
+            // Roughly 50% taller than the shared eqneditor.css's own default for either view,
+            // so the maths view in particular reads as the main event, not a strip above the
+            // toolbar. !important, since load order against eqneditor.css above is not
+            // guaranteed.
+            var sizeStyle = document.createElement( 'style' );
+            sizeStyle.textContent = '.CCMathViewHost, .CCLatexInput { min-height: 220px !important; }';
+            document.head.appendChild( sizeStyle );
+
+            eqOutput = new EqEditor.Output( 'cc-output' );
+            eqOutput.setRenderURL( renderUrl );
+
+            eqTextArea = EqEditor.TextArea.link( 'cc-latex-input' )
+                .addOutput( eqOutput )
+                .addHistoryMenu( new EqEditor.History( 'cc-history' ) );
+
+            eqToolbar = EqEditor.Toolbar.link( 'cc-toolbar', 'default', 1.4 ).addTextArea( eqTextArea );
+
+            if ( typeof EqEditor.MathView !== 'undefined' ) {
+                eqMathView = EqEditor.MathView.link( 'cc-mathview' ).addTextArea( eqTextArea );
+                eqToolbar.addMathView( eqMathView );
+            } else {
+                showLatex = true;
+            }
+
+            applyLatexVisible( showLatex );
+
+            document.getElementById( 'cc-toggle' ).addEventListener( 'change', function ( e ) {
+                if ( e.target.matches( 'input[data-latex-toggle]' ) ) {
+                    applyLatexVisible( e.target.checked );
+                }
+            } );
+
+            document.getElementById( 'insert-btn' ).disabled = false;
+        }
+
+        document.getElementById( 'insert-btn' ).addEventListener( 'click', function () {
+            var latex = eqTextArea.getTextArea().textContent.trim();
+            if ( !latex ) {
+                setStatus( 'Write an equation first.' );
+                return;
+            }
+
+            document.getElementById( 'form-ltik' ).value = ltik;
+            document.getElementById( 'form-url' ).value = eqOutput.exportAs( 'url' );
+            document.getElementById( 'form-latex' ).value = latex;
+            document.getElementById( 'insert-form' ).submit();
+        } );
+
+        fetch( '/config?ltik=' + encodeURIComponent( ltik ) )
+            .then( function ( r ) { return r.json(); } )
+            .then( function ( config ) {
+                renderUrl = config.renderUrl;
+                if ( !latexCookieMatch ) showLatex = !!config.showLatex;
+
+                document.getElementById( 'mode-hint' ).textContent = config.isDeepLinking ?
+                    'Build your equation, then press Insert to add it to the content you are editing.' :
+                    'Build your equation, then press Insert to get an image you can copy into your content.';
+
+                return loadScript( 'https://' + config.server + '/eqneditor.api.min.js' )
+                    .then( function () { mount( config.server ); } );
+            } )
+            .catch( function ( err ) { setStatus( err.message ); } );
+    </script>
+</body>
+</html>
