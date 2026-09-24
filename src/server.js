@@ -99,6 +99,9 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
         isDeepLinking: context.deepLinking.isAvailable(),
         server: process.env.EQNEDITOR_SERVER || 'editor.codecogs.com',
         renderUrl: process.env.EQNEDITOR_RENDER_URL || 'https://latex.codecogs.com',
+        // Passed straight to EqEditor.init() - an empty licence is the normal, expected state
+        // until a real one is configured, not a required variable.
+        licence: process.env.EQNEDITOR_LICENCE || '',
         // The maths view is the default and, by far, the more common thing to want on screen -
         // the LaTeX markup view is the opt-in. This is only the fallback for a first-time
         // visitor with no cookie yet - see views/launch.html.
