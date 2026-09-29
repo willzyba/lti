@@ -118,6 +118,11 @@
                 : Promise.resolve();
         }
 
+        // A bare host means https; a full origin (e.g. http://localhost:8010 for local development) is used as it is.
+        function serverOrigin( host ) {
+            return /^https?:\/\//.test( host ) ? host.replace( /\/+$/, '' ) : 'https://' + host;
+        }
+
         function loadCss( url ) {
             var link = document.createElement( 'link' );
             link.rel = 'stylesheet';
@@ -149,7 +154,7 @@
         }
 
         function mount( server ) {
-            loadCss( 'https://' + server + '/eqneditor.css' );
+            loadCss( serverOrigin( server ) + '/eqneditor.css' );
 
             // Roughly 50% taller than the shared eqneditor.css's own default for either view,
             // so the maths view in particular reads as the main event, not a strip above the
@@ -163,10 +168,13 @@
             sizeStyle.textContent =
                 '@font-face { font-family: "Latin Modern Math"; font-display: swap; ' +
                     'src: local("Latin Modern Math"), ' +
-                    'url("https://' + server + '/prototypes/latinmodern-math.otf") format("opentype"); }' +
+                    'url("' + serverOrigin( server ) + '/prototypes/latinmodern-math.otf") format("opentype"); }' +
                 // Undo host resets (e.g. .cke_reset_all *) inside the toolbar icons and the maths view's MathML.
-                '.CCToolbar svg, .CCToolbar svg * { font: revert-layer !important; }' +
-                '.CCToolbar svg * { width: revert-layer !important; height: revert-layer !important; }' +
+                '.CCToolbar svg:has(g[font-family]), .CCToolbar svg:has(g[font-family]) * { font: revert-layer !important; }' +
+                // Older API builds draw the icons as plain <text>, fonted by the API's own .cc_panel rule instead.
+                '.CCToolbar svg:not(:has(g[font-family])) { font: normal normal 16px "fxTeX Toolbar" !important; }' +
+                '.CCToolbar svg:not(:has(g[font-family])) * { font: inherit !important; }' +
+                '.CCToolbar svg, .CCToolbar svg * { width: revert-layer !important; height: revert-layer !important; max-width: revert-layer !important; }' +
                 '.CCToolbar svg g[font-family="fxTeX Toolbar"] { color: #000 !important; }' +
                 '.CCMathView math, .CCMathView math * { font: revert-layer !important; ' +
                     'width: revert-layer !important; height: revert-layer !important; padding: revert-layer !important; ' +
@@ -226,7 +234,7 @@
                     'Build your equation, then press Insert to add it to the content you are editing.' :
                     'Build your equation, then press Insert to get an image you can copy into your content.';
 
-                return loadScript( 'https://' + config.server + '/eqneditor.api.min.js' )
+                return loadScript( serverOrigin( config.server ) + '/eqneditor.api.min.js' )
                     .then( function () { return ensureInit( config.licence ); } )
                     .then( function () { mount( config.server ); } );
             } )
