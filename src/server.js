@@ -62,6 +62,16 @@ function escapeHtml( s ) {
         .replace( />/g, '&gt;' ).replace( /"/g, '&quot;' );
 }
 
+// EQNEDITOR_DESIGN is JSON; anything that does not parse is treated as no design at all, so a
+// typo leaves the standard editor rather than a broken one.
+function parseDesign( json ) {
+    try {
+        return JSON.parse( json || '{}' ) || {};
+    } catch ( e ) {
+        return {};
+    }
+}
+
 function renderLaunchPage( ltik ) {
     // The one thing the static template needs from the server: the ltik that identifies this
     // launch, so the client's later /config and /insert calls can resume it via
@@ -97,11 +107,13 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
 
     response.json( {
         isDeepLinking: context.deepLinking.isAvailable(),
-        server: process.env.EQNEDITOR_SERVER || 'editor.codecogs.com',
+        server: process.env.EQNEDITOR_SERVER || 'fxeditor.codecogs.com',
         renderUrl: process.env.EQNEDITOR_RENDER_URL || 'https://latex.codecogs.com',
         // Passed straight to EqEditor.init() - an empty licence is the normal, expected state
         // until a real one is configured, not a required variable.
         licence: process.env.EQNEDITOR_LICENCE || '',
+        // How the editor looks, as JSON - see the `design` option in the README.
+        design: parseDesign( process.env.EQNEDITOR_DESIGN ),
         // The maths view is the default and, by far, the more common thing to want on screen -
         // the LaTeX markup view is the opt-in. This is only the fallback for a first-time
         // visitor with no cookie yet - see views/launch.html.

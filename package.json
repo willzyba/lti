@@ -1,5 +1,5 @@
 {
-  "name": "@codecogs/eqneditor-lti",
+  "name": "@codecogs/fxeditor-lti",
   "version": "1.0.0",
   "private": true,
   "description": "CodeCogs Equation Editor as a single LTI 1.3 Advantage tool - one deployment covers Canvas, Blackboard, Brightspace, Schoology and any other LTI 1.3 platform, instead of a separate native plugin per LMS",

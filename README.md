@@ -1,4 +1,4 @@
-# @codecogs/eqneditor-lti
+# @codecogs/fxeditor-lti
 
 The [CodeCogs Equation Editor](https://editor.codecogs.com) as a single **LTI 1.3 Advantage**
 tool. One deployment of this server, registered once per platform, reaches Canvas, Blackboard,
@@ -58,7 +58,7 @@ platforms.example.json Copy to platforms.json and fill in your own platform regi
    Tool"), which is a **Deep Linking** launch, or from a persistent **placement** (a course
    navigation link, say), which is a **Resource Link** launch. Both render the same
    `views/launch.html`.
-2. The page loads `eqneditor.api.min.js`/`eqneditor.css` from `editor.codecogs.com` exactly
+2. The page loads `eqneditor.api.min.js`/`eqneditor.css` from `fxeditor.codecogs.com` exactly
    the way every other adapter does, and builds the same toolbar/text-area/maths-view set.
 3. Pressing **Insert** submits a real HTML form to `/insert` (not a `fetch()` - see the comment
    in `views/launch.html` for why: a Deep Linking response is itself a small auto-submitting
@@ -111,7 +111,7 @@ either a JWKS URL or a single public key - exactly the fields `platforms.example
 |---|---|---|
 | `MONGO_URL` | *(required)* | ltijs' platform/session store. |
 | `PORT` | `3000` | |
-| `EQNEDITOR_SERVER` | `editor.codecogs.com` | Same meaning as every other adapter. |
+| `EQNEDITOR_SERVER` | `fxeditor.codecogs.com` | Same meaning as every other adapter. |
 | `EQNEDITOR_RENDER_URL` | `https://latex.codecogs.com` | Same meaning as every other adapter. |
 | `EQNEDITOR_SHOW_LATEX` | `true` | Same meaning as every other adapter. |
 | `PLATFORMS_FILE` | `./platforms.json` | Where to load platform registrations from. |
