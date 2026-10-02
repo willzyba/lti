@@ -108,7 +108,7 @@
 
         // EqEditor.init() switches the converter every TextArea/MathView/Toolbar construction
         // takes on to fxTeX Pro - skip it and they keep the placeholder converter for the whole
-        // launch page's lifetime, even once eqneditor.api.min.js itself has loaded. Called once,
+        // launch page's lifetime, even once fxeditor.api.min.js itself has loaded. Called once,
         // right after the script loads; an empty licence is the normal, expected state until a
         // real one is configured.
         function ensureInit( licence ) {
@@ -238,11 +238,11 @@
         }
 
         function mount( server ) {
-            loadCss( serverOrigin( server ) + '/eqneditor.css' );
+            loadCss( serverOrigin( server ) + '/fxeditor.css' );
 
-            // Roughly 50% taller than the shared eqneditor.css's own default for either view,
+            // Roughly 50% taller than the shared fxeditor.css's own default for either view,
             // so the maths view in particular reads as the main event, not a strip above the
-            // toolbar. !important, since load order against eqneditor.css above is not
+            // toolbar. !important, since load order against fxeditor.css above is not
             // guaranteed. Also redeclares "Latin Modern Math" with a real url() fallback: the
             // API's own injected @font-face only carries local("Latin Modern Math"), which
             // silently falls back to a generic serif unless that exact font happens to be
@@ -322,7 +322,7 @@
                     'Build your equation, then press Insert to add it to the content you are editing.' :
                     'Build your equation, then press Insert to get an image you can copy into your content.';
 
-                return loadScript( serverOrigin( config.server ) + '/eqneditor.api.min.js' )
+                return loadScript( serverOrigin( config.server ) + '/fxeditor.api.min.js' )
                     .then( function () { return ensureInit( config.licence ); } )
                     .then( function () { mount( config.server ); } );
             } )

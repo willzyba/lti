@@ -58,7 +58,7 @@ platforms.example.json Copy to platforms.json and fill in your own platform regi
    Tool"), which is a **Deep Linking** launch, or from a persistent **placement** (a course
    navigation link, say), which is a **Resource Link** launch. Both render the same
    `views/launch.html`.
-2. The page loads `eqneditor.api.min.js`/`eqneditor.css` from `fxtex.codecogs.com` exactly
+2. The page loads `fxeditor.api.min.js`/`fxeditor.css` from `fxtex.codecogs.com` exactly
    the way every other adapter does, and builds the same toolbar/text-area/maths-view set.
 3. Pressing **Insert** submits a real HTML form to `/insert` (not a `fetch()` - see the comment
    in `views/launch.html` for why: a Deep Linking response is itself a small auto-submitting
