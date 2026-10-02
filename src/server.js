@@ -107,7 +107,7 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
 
     response.json( {
         isDeepLinking: context.deepLinking.isAvailable(),
-        server: process.env.EQNEDITOR_SERVER || 'fxeditor.codecogs.com',
+        server: process.env.EQNEDITOR_SERVER || 'fxtex.codecogs.com',
         renderUrl: process.env.EQNEDITOR_RENDER_URL || 'https://latex.codecogs.com',
         // Passed straight to EqEditor.init() - an empty licence is the normal, expected state
         // until a real one is configured, not a required variable.
