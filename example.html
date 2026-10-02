@@ -3,8 +3,11 @@
   A preview of the LTI 1.3 tool outside an LMS: the page an instructor sees after launching it
   (views/launch.html, unchanged). The Node server's /config route is replaced by a stub that
   answers the way src/server.js does from its environment (EQNEDITOR_SERVER, EQNEDITOR_LICENCE,
-  EQNEDITOR_RENDER_URL), and the /insert form post - which would return the equation to the
-  LMS as a Deep Linking response - shows the equation below instead.
+  EQNEDITOR_DESIGN, EQNEDITOR_RENDER_URL), and the /insert form post - which would return the
+  equation to the LMS as a Deep Linking response - shows the equation below instead.
+
+  The tool's page is mounted into this one rather than a frame of its own: fxTeX Pro checks the
+  licence against the page's address, and a frame written from here would have none.
 
   In a real deployment, run the server (npm start) with those variables set and register it
   with your LMS - see README.md. Replace the licence with your own fxTeX Pro licence key
@@ -19,7 +22,7 @@
         body { margin: 0; background: #f5f5f5; font-family: -apple-system, "Segoe UI", Arial, sans-serif; color: #1c2530; }
         .lms { max-width: 900px; margin: 0 auto; padding: 16px; }
         .lms-bar { background: #394b58; color: #fff; padding: 10px 16px; font-size: 14px; border-radius: 4px 4px 0 0; }
-        .lms iframe { display: block; width: 100%; height: 720px; border: 1px solid #c7cdd1; border-top: 0; background: #fff; }
+        #tool { border: 1px solid #c7cdd1; border-top: 0; background: #fff; }
         .returned { margin-top: 16px; background: #fff; border: 1px solid #c7cdd1; border-radius: 4px; padding: 12px 16px; }
         .returned h2 { font-size: 14px; margin: 0 0 8px; color: #52606d; font-weight: 600; }
         .returned img { vertical-align: middle; margin: 4px 8px 4px 0; }
@@ -28,7 +31,7 @@
 <body>
     <div class="lms">
         <div class="lms-bar">Course editor &rsaquo; Insert content &rsaquo; CodeCogs Equation Editor</div>
-        <iframe id="tool" title="LTI tool"></iframe>
+        <div id="tool"></div>
         <div class="returned">
             <h2>Returned to the LMS</h2>
             <div id="returned">Nothing yet - build an equation above and press Insert.</div>
@@ -55,27 +58,42 @@
             box.appendChild( img );
         }
 
-        var stub =
-            '<script>' +
-            'var realFetch = window.fetch;' +
-            'window.fetch = function ( url, opts ) {' +
-            '    if ( String( url ).indexOf( "/config" ) === 0 )' +
-            '        return Promise.resolve( new Response( JSON.stringify( parent.config ), { headers: { "Content-Type": "application/json" } } ) );' +
-            '    return realFetch.apply( this, arguments );' +
-            '};' +
-            'HTMLFormElement.prototype.submit = function () {' +
-            '    parent.received( this.elements.url.value, this.elements.latex.value );' +
-            '};' +
-            '<\/script>';
+        // The tool's server, as its page sees it: /config answered from `config` above, and the
+        // /insert form post handed to received() instead of leaving the page.
+        var realFetch = window.fetch;
+        window.fetch = function ( url ) {
+            if ( String( url ).indexOf( '/config' ) === 0 ) {
+                return Promise.resolve( new Response( JSON.stringify( config ),
+                    { headers: { 'Content-Type': 'application/json' } } ) );
+            }
+            return realFetch.apply( this, arguments );
+        };
+        HTMLFormElement.prototype.submit = function () {
+            received( this.elements.url.value, this.elements.latex.value );
+        };
+
+        // launch.html, into #tool: its styles (with "body" meaning the tool), its markup, then its
+        // scripts - recreated, since scripts parsed from a string never run.
+        function mountPage( html, box ) {
+            var page = new DOMParser().parseFromString( html, 'text/html' );
+            page.querySelectorAll( 'style' ).forEach( function ( st ) {
+                var style = document.createElement( 'style' );
+                style.textContent = st.textContent.replace( /(^|[},\s])body(?=\s*[{,])/g, '$1#' + box.id );
+                document.head.appendChild( style );
+            } );
+            Array.prototype.slice.call( page.body.childNodes ).forEach( function ( node ) {
+                if ( node.nodeName !== 'SCRIPT' ) box.appendChild( document.importNode( node, true ) );
+            } );
+            page.body.querySelectorAll( 'script' ).forEach( function ( old ) {
+                var script = document.createElement( 'script' );
+                script.textContent = old.textContent;
+                box.appendChild( script );
+            } );
+        }
 
         fetch( 'views/launch.html' )
             .then( function ( r ) { return r.text(); } )
-            .then( function ( html ) {
-                // srcdoc keeps this page's origin, so the frame can reach the stubs above.
-                document.getElementById( 'tool' ).srcdoc = html
-                    .replace( '__LTIK__', 'preview' )
-                    .replace( '<head>', '<head>' + stub );
-            } );
+            .then( function ( html ) { mountPage( html.replace( '__LTIK__', 'preview' ), document.getElementById( 'tool' ) ); } );
     </script>
 </body>
 </html>
