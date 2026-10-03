@@ -227,12 +227,12 @@
                 try { rules = document.styleSheets[ i ].cssRules; } catch ( e ) { continue; }
                 for ( var j = 0; j < rules.length; j++ ) {
                     var r = rules[ j ], decls = '';
-                    if ( !r.selectorText || !/(^|,)\s*\.(fxtex|CCMathView)\b/.test( r.selectorText ) ) continue;
+                    if ( !r.selectorText || !/(^|,)\s*(:where\(\.fxEditor\)\s*)?\.(fxtex|CCMathView)\b/.test( r.selectorText ) ) continue;
                     for ( var k = 0; k < r.style.length; k++ ) {
                         decls += r.style[ k ] + ':' + r.style.getPropertyValue( r.style[ k ] ) + ' !important;';
                     }
                     if ( decls ) {
-                        out += r.selectorText.split( ',' ).map( function ( s ) {
+                        out += r.selectorText.replace( /:where\(\.fxEditor\)\s*/g, '' ).split( ',' ).map( function ( s ) {
                             s = s.trim();
                             return /^\.CCMathView\b/.test( s ) ? s : '.CCMathView ' + s;
                         } ).join( ',' ) + '{' + decls + '}';
