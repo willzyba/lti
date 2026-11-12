@@ -1,134 +1,131 @@
 # @codecogs/fxeditor-lti
 
-The [CodeCogs Equation Editor](https://editor.codecogs.com) as a single **LTI 1.3 Advantage**
-tool. One deployment of this server, registered once per platform, reaches Canvas, Blackboard,
-Brightspace, Schoology, Moodle, or any other LTI 1.3 platform - instead of a separate native
-plugin per LMS, which is what every other adapter in this repo is.
+fxEditor as a single **LTI 1.3 Advantage** tool, at https://lti.codecogs.com. One deployment
+reaches Canvas, Blackboard, Brightspace, Schoology, Moodle, or any other LTI 1.3 platform -
+instead of a separate native plugin per LMS, which is what every other adapter in this repo is.
 
-Built on [ltijs](https://github.com/Cvmcosta/ltijs) v7, an actively-maintained open-source LTI
-1.3 Advantage implementation, rather than hand-rolled OIDC/JWT handling - this is an
-authentication flow, and that is not a place to prefer bespoke code over a maintained library.
+Built on [ltijs](https://github.com/Cvmcosta/ltijs) v7. **v7 is a full rewrite** with a different
+API from v5, which is what most tutorials (and most of what anyone, human or LLM, already knows
+about ltijs) describe. Every ltijs call in `src/` was checked against the installed package's own
+`.d.ts` files - do the same before changing one.
 
 ## Verified against
 
-**Not tested against a real LMS launch** - there is no Canvas/Moodle/Blackboard/Brightspace/
-Schoology sandbox available to register this tool with and launch it from. What *was* actually
-run, against a real ltijs v7 install and a real local MongoDB (not mocked):
+**Moodle 4.5 LTS** (4.5.15+, November 2026, in Docker - see "Testing locally"), end to end:
 
-- The server boots, connects to MongoDB, and starts listening.
-- `platformManager.registerPlatform()` succeeds and generates a real RSA keypair for a test
-  platform.
-- `GET /keys` (the JWKS endpoint) correctly serves that generated public key.
-- `GET /login` with realistic OIDC parameters returns `200` rather than crashing - the login
-  redirect construction runs successfully against a registered platform.
+- Dynamic Registration from Moodle's *Manage tools* - Moodle recorded the tool with names and
+  email never sent and no grade or roster services.
+- A Deep Linking launch from an External tool activity's *Select content*: the editor opens in
+  Moodle's dialog, Insert returns a signed Deep Linking response, Moodle verifies it against
+  `/keys` and creates the activity.
+- The activity itself: a Resource Link launch carrying the equation in its custom parameters,
+  shown as the image.
+- The stored launch token: no name, email, `ext` or course title in it.
+- The deployment record: launches and inserts counted by month, licence looked up.
 
-**Not verified**: an actual signed launch reaching `/launch` (would need a JWKS server for the
-fake test platform's own keys, to sign a test `id_token` the way a real LMS would), and the
-Deep Linking response your "Insert" step builds. That code follows the shape ltijs' own
-`.d.ts` files document (`context.deepLinking.isAvailable()` /
-`context.deepLinking.createDeepLinkingForm()`), but has not been exercised end-to-end.
+**Not yet tried against** Canvas, Blackboard, Brightspace or Schoology - no sandbox for any of
+them yet. Canvas's registration takes its own extras (see `src/registration.js`), unverified.
 
-This matters more than the same caveat on the Moodle or Google Workspace adapters in this
-repo: **ltijs v7 is a full rewrite** with a materially different API from v5, which is what
-most existing tutorials (and most of what anyone, human or LLM, is likely to already know
-about ltijs) still describe. Every API call in `src/server.js` was checked against the
-installed package's own `.d.ts` files, not written from memory - see the comment at the top of
-that file.
-
-## Why this only offers an image, like the Google Workspace adapter
-
-Deep Linking's `'html'` content item type is what actually gets embedded - LTI 1.3 platforms
-generally don't have a native LaTeX/MathML content type to place instead, so an `<img>` is the
-form guaranteed to mean something on the other end, the same reasoning as the Google Docs/
-Slides adapter.
-
-## Structure
+## How it fits together
 
 ```
-src/server.js         Provider setup, the two launch handlers, /config and /insert.
-src/platforms.js       Loads platforms.json (or PLATFORMS_JSON) and registers each with ltijs.
-views/launch.html      The launched page - the same EqEditor UI every other adapter embeds.
-platforms.example.json Copy to platforms.json and fill in your own platform registrations.
-.env.example            Copy to .env.
+src/server.js         Provider, launches, /config, /insert, /logo.svg, /health.
+src/registration.js   Dynamic Registration at /register - what the tool asks the LMS for.
+src/deployments.js    One record per LMS deployment: usage by month, and its licence.
+src/content.js        The one Deep Linking content item an equation becomes.
+src/platforms.js      Manual registrations, from platforms.json (or PLATFORMS_JSON).
+views/launch.html     The editor page - the same EqEditor UI every other adapter embeds.
 ```
 
-## How a launch works
+### Getting onto an LMS
 
-1. An instructor opens the tool - either from a **content picker** ("Insert from App", "External
-   Tool"), which is a **Deep Linking** launch, or from a persistent **placement** (a course
-   navigation link, say), which is a **Resource Link** launch. Both render the same
-   `views/launch.html`.
-2. The page loads `fxeditor.api.min.js`/`fxeditor.css` from `fxtex.codecogs.com` exactly
-   the way every other adapter does, and builds the same toolbar/text-area/maths-view set.
-3. Pressing **Insert** submits a real HTML form to `/insert` (not a `fetch()` - see the comment
-   in `views/launch.html` for why: a Deep Linking response is itself a small auto-submitting
-   page, and that only works if the browser receives and renders it as one).
-4. `/insert` resumes the launch via `Provider.getLaunchContext(ltik)`, then either:
-   - **Deep Linking**: builds and returns an LTI Deep Linking response embedding the equation
-     as an `<img>`, which the browser auto-submits back to the platform.
-   - **Resource Link**: there is nothing to hand back: returns a page showing the rendered
-     image and its URL, to copy manually.
+- **Dynamic Registration** (Moodle, Canvas, Brightspace): the LMS administrator pastes
+  `https://lti.codecogs.com/register` into the LMS - Moodle's *Site administration > Plugins >
+  External tool > Manage tools*, Canvas's *Developer Keys > + LTI Registration*, Brightspace's
+  *Manage Extensibility > LTI Advantage > Register Tool (Dynamic)*. The two exchange everything
+  else themselves. The tool asks for:
+  - no services (no grades, no rosters);
+  - claims `iss` and `sub` only - no names or email. Moodle reads exactly this list to decide
+    whether to send names and email;
+  - on Canvas, also `privacy_level: anonymous` and the Rich Content Editor button
+    (`editor_button`).
+  Registrations are active at once; whether an institution may *use* the tool is a licensing
+  question, answered at launch.
+- **Manual registration** (Blackboard, Schoology, or any LMS without Dynamic Registration): the
+  LMS's values go into `platforms.json` - see `platforms.example.json` - and the tool's into the
+  LMS: login `https://lti.codecogs.com/login`, launch/redirect `https://lti.codecogs.com/launch`,
+  keys `https://lti.codecogs.com/keys`.
 
-## Deploying
+### A launch
 
-1. `npm install`
-2. Copy `.env.example` to `.env` and set `MONGO_URL` (a MongoDB instance ltijs will use as its
-   platform/session store - no separate encryption key needed for a fresh v7 install; see the
-   comment in `.env.example`).
-3. Copy `platforms.example.json` to `platforms.json` and register this tool with each platform
-   you want to support first (see below) - you need each platform's own issued values before
-   this file can be filled in, not the other way round.
-4. `npm start`. The server needs to be reachable over HTTPS at a public URL before any real
-   platform will launch it - LTI launches arrive inside an iframe, which every platform
-   requires to be secure.
+1. An instructor opens the tool from a content picker or an editor button - a **Deep Linking**
+   launch - or from a link - a **Resource Link** launch.
+2. The page loads `fxeditor.api.min.js` and `fxeditor.css` from fxtex.codecogs.com, like every
+   other adapter.
+3. **Insert** posts a real HTML form to `/insert` (not `fetch()` - a Deep Linking response is
+   itself an auto-submitting page, which only runs if the browser renders it as one).
+4. `/insert` checks the image is from the configured renderer, then answers with **one** content
+   item of the best kind the placement accepts (`src/content.js`): `html` (an `<img>` with the
+   LaTeX as alt text, for editor buttons), else `image`, else `link`, else `ltiResourceLink` - a
+   link back to this tool that shows the equation, which is all Moodle's *Select content* takes.
+   One item, because a platform accepting several would otherwise insert the equation several
+   times.
 
-### Registering with each platform
+### Licences and usage
 
-Every LTI 1.3 platform's own admin console is where you register *this tool* and get back the
-`clientId`/endpoint values `platforms.json` needs - none of this repo's own values matter until
-that's done:
+Every page here is on lti.codecogs.com, whichever institution opened it, so fxTeX Pro on the page
+runs under CodeCogs' own licence for that address (`EQNEDITOR_LICENCE`). What identifies an
+institution is its LMS registration - issuer, client id, deployment id - and
+`src/deployments.js` keeps one record per deployment (collection `fxdeployments`): its LMS address,
+launches and inserts by month, and its licence, checked against fxtex's `/diagnostics.json` (the
+same registry as every other licence) at most hourly. An institution is licensed by either:
 
-- **Canvas**: *Admin &rarr; Developer Keys &rarr; + LTI Key*. Canvas needs your tool's config
-  either as a URL (point it at `https://your-deployment/lti/config` once a config endpoint
-  exists - not built yet, see "Known gaps") or pasted in as JSON/XML by hand for now.
-- **Blackboard**: [Blackboard's REST/LTI developer portal](https://developer.blackboard.com) -
-  register an **LTI 1.3** application, not the older Building Block format.
-- **Brightspace**: *Admin Tools &rarr; External Learning Tools &rarr; LTI Advantage &rarr;
-  Register Tool*.
-- **Schoology**: *App Center &rarr; Schoology API &rarr; LTI 1.3* registration flow, or via
-  their partner onboarding if this is a district-wide install.
-- **Moodle**: *not the way to reach Moodle from this repo* - Moodle can act as an LTI 1.3
-  platform too, and would work through this same connector, but [`moodle/tiny_eqneditor`](../moodle)
-  is the native plugin built for it, and is the better fit for a Moodle-only deployment (no
-  separate server to run, no MongoDB).
+- **key**: its LMS administrator sets the tool's custom parameter `fxeditor_licence=fx_pk_...`;
+- **address**: its LMS's own address (from the launch's return URLs - not the issuer, which
+  Canvas and Blackboard share between all customers) is a registered domain on its licence.
 
-Each platform hands back a `clientId`, an OIDC authentication endpoint, a token endpoint, and
-either a JWKS URL or a single public key - exactly the fields `platforms.example.json` shows.
+`LICENCE_MODE=log` (the default) only records; `LICENCE_MODE=enforce` shows an unlicensed
+deployment how to get licensed instead of the editor.
+
+### Personal data
+
+None is needed, and none is kept. Registration asks for none (above). Whatever a launch still
+carries is stripped before ltijs stores the launch token (`server.js`): names, email, picture,
+`lis`, vendor `ext`, and the course's title and code. What remains - an opaque user id, roles,
+the course's opaque id, the platform's identifiers - is deleted after 24 hours (ltijs' TTL index on
+`idTokens`). Deployment records hold no user or course data. This is what the Privacy Policy and
+Student Data Privacy pages on fxeditor.codecogs.com describe; keep them in step.
 
 ## Configuration
 
 | Env var | Default | Meaning |
 |---|---|---|
-| `MONGO_URL` | *(required)* | ltijs' platform/session store. |
+| `MONGO_URL` | *(required)* | ltijs' store and the deployment records. |
+| `TOOL_URL` | `http://localhost:$PORT` | This tool's public address, as LMSs reach it. |
 | `PORT` | `3000` | |
-| `EQNEDITOR_SERVER` | `fxtex.codecogs.com` | Same meaning as every other adapter. |
-| `EQNEDITOR_RENDER_URL` | `https://latex.codecogs.com` | Same meaning as every other adapter. |
-| `EQNEDITOR_SHOW_LATEX` | `true` | Same meaning as every other adapter. |
-| `PLATFORMS_FILE` | `./platforms.json` | Where to load platform registrations from. |
-| `PLATFORMS_JSON` | *(unset)* | The same content as `PLATFORMS_FILE`, inline - for a deployment that keeps this in a secret manager instead of a file. Takes priority over `PLATFORMS_FILE` if both are set. |
+| `LICENCE_MODE` | `log` | `log` or `enforce` - see above. |
+| `FXTEX_ORIGIN` | `https://fxtex.codecogs.com` | Where licences are checked. |
+| `EQNEDITOR_LICENCE` | *(empty)* | fxTeX Pro licence for the tool's own address. |
+| `EQNEDITOR_SERVER` | `fxtex.codecogs.com` | Where the editor is loaded from. |
+| `EQNEDITOR_RENDER_URL` | `https://latex.codecogs.com` | Where equation images are rendered - and the only host `/insert` accepts images from. |
+| `EQNEDITOR_SHOW_LATEX` | `false` | Show the LaTeX pane by default. |
+| `EQNEDITOR_DESIGN` | *(none)* | The `design` option, as JSON. |
+| `PLATFORMS_FILE` / `PLATFORMS_JSON` | `./platforms.json` | Manual registrations. |
+| `DEBUG` | *(unset)* | Any value: ltijs' debug lines too. Warnings and errors are always logged. |
 
-## Known gaps
+## Testing locally
 
-- **Not tested against a real launch** - see "Verified against" above. Do this before
-  registering with a real platform: ltijs' own docs
-  (https://cvmcosta.me/ltijs/#/guides/getting-started) cover local testing against a sandbox
-  platform.
-- **No tool configuration endpoint.** Canvas in particular can register a tool from a single
-  config URL rather than pasted-in JSON; ltijs doesn't build one automatically the way v5's
-  `/register` (dynamic registration) route could, though `dynamicRegistration` in
-  `ProviderOptions` is worth another look if manual registration proves painful across many
-  institutions.
-- **No Assignment and Grade Services or Names and Roles Provisioning use.** ltijs exposes both
-  (`context.grading`, `context.namesAndRoles`) but this tool has no use for grades or roster
-  data - it only inserts content, so neither is wired up.
-- **No automated tests.** `npm test` does not exist yet.
+Against the Moodle 4.5 test site in `/Users/will/Data/Vultr/moodle-dev` (see
+`../moodle/tiny_eqneditor/README.md`):
+
+1. MongoDB: `docker run -d --name fxlti-mongo -p 127.0.0.1:27017:27017 mongo:7`.
+2. The tool: the `fxeditor-lti` entry in `../.claude/launch.json` (`TOOL_URL=http://localhost:3000`).
+3. Moodle must reach the tool at the *same* address the browser uses. Inside the Moodle container
+   `localhost` is the container, so a forwarder shares its network and passes `localhost:3000` on
+   to the Mac:
+   `docker run -d --name moodle405-ltifwd --network container:moodle405-webserver-1 alpine/socat TCP-LISTEN:3000,fork,reuseaddr,bind=127.0.0.1 TCP:192.168.65.254:3000`.
+   (Two things that do not work: `*.localhost` names - curl, and so Moodle, always resolves them
+   to the container itself; and the Mac's LAN address - Chrome's Local Network Access blocks the
+   tool's page from redirecting back to Moodle on `localhost`.)
+4. Register with `http://localhost:3000/register` in Moodle's *Manage tools*, activate it, then
+   add an External tool activity and *Select content*.
