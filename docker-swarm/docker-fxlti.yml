@@ -1,0 +1,100 @@
+# Docker Swarm stack for lti.codecogs.com - fxEditor's LTI 1.3 tool (lti/, see lti/README.md) and
+# the MongoDB it keeps LMS registrations, launch tokens and deployment records in.
+#
+# fxnginx routes lti.codecogs.com to fxlti_lti:3000 on the ingress-routing overlay and terminates
+# TLS. MongoDB is on its own overlay only, never on ingress-routing: nothing but the tool reaches it.
+#
+# Before the first deploy, on codecogs1 (MongoDB's data lives on its local disk - see below):
+#
+#   mkdir -p /root/fxlti/mongo
+#
+# Deploy from codecogs1 (the manager):
+#
+#   docker stack deploy --with-registry-auth -c docker-fxlti.yml fxlti
+#   docker service logs -f fxlti_lti
+version: "3.9"
+
+services:
+    lti:
+        image: willzyba/fxeditor-lti:1.0.00
+        networks:
+            - ingress
+            - data
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            mode: replicated
+            # One on each node. ltijs keeps no state in the process (its default cache is a no-op),
+            # so either replica can take any request of a launch.
+            replicas: 2
+            placement:
+                max_replicas_per_node: 1
+            update_config:
+                parallelism: 1
+                delay: 10s
+                # stop-first: with one replica per node on two nodes, a start-first task has nowhere
+                # to start until the old one has stopped (as fxplugins found).
+                order: stop-first
+            restart_policy:
+                condition: any
+                delay: 5s
+                max_attempts: 5
+                window: 120s
+        environment:
+            MONGO_URL: mongodb://mongo:27017/fxeditor-lti
+            # What LMSs are given to launch the tool at, and register it with.
+            TOOL_URL: https://lti.codecogs.com
+            # fxTeX Pro for the tool's own pages - CodeCogs' own key, for codecogs.com addresses.
+            # Every launch page is on lti.codecogs.com whichever institution opened it; who an
+            # institution is licensed as is worked out per deployment instead (lti/src/deployments.js).
+            EQNEDITOR_LICENCE: "***REMOVED***"
+            EQNEDITOR_SERVER: fxtex.codecogs.com
+            # log: record each deployment's use and licence, refuse nobody. enforce: an unlicensed
+            # deployment is shown how to get licensed instead of the editor.
+            LICENCE_MODE: log
+        healthcheck:
+            test: wget -qO - http://127.0.0.1:3000/health || exit 1
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 20s
+
+    mongo:
+        image: mongo:7
+        networks:
+            - data
+        logging:
+            driver: json-file
+            options:
+                max-size: "10m"
+                max-file: "3"
+        deploy:
+            mode: replicated
+            replicas: 1
+            # One node's local disk, not the shared /mnt/vfs: MongoDB on a network filesystem risks
+            # corruption, and one replica is plenty for registrations and counters.
+            placement:
+                constraints:
+                    - node.hostname == codecogs1
+            restart_policy:
+                condition: any
+                delay: 5s
+        volumes:
+            - /root/fxlti/mongo:/data/db
+        healthcheck:
+            test: mongosh --quiet --eval "db.adminCommand('ping').ok" || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+
+networks:
+    ingress:
+        external: true
+        name: ingress-routing
+    # The tool and MongoDB only.
+    data:
+        driver: overlay
