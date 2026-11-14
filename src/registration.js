@@ -57,6 +57,12 @@ function overridesFor( configuration, toolUrl ) {
     return overrides;
 }
 
+// The registration pages are seen by an LMS administrator, so they carry a title and a language
+// like the tool's other pages (WCAG 2.4.2, 3.1.1). ltijs' closing snippet is only a script.
+function page( title, body ) {
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' + title + '</title></head><body>' + body + '</body></html>';
+}
+
 /**
  * Takes over ltijs' /register route so every registration carries the overrides above. The
  * response is ltijs' own closing snippet, which tells the LMS the registration is done.
@@ -67,7 +73,7 @@ function install( provider, toolUrl ) {
         var openidConfiguration = request.query.openid_configuration;
         var registrationToken = request.query.registration_token;
         if ( !openidConfiguration || typeof openidConfiguration !== 'string' ) {
-            response.status( 400 ).html( '<p>This address is for an LMS administrator to register fxEditor with Dynamic Registration - open it from the LMS, not directly.</p>' );
+            response.status( 400 ).html( page( 'fxEditor registration', '<p>This address is for an LMS administrator to register fxEditor with Dynamic Registration - open it from the LMS, not directly.</p>' ) );
             return;
         }
         try {
@@ -76,11 +82,11 @@ function install( provider, toolUrl ) {
                 typeof registrationToken === 'string' ? registrationToken : undefined,
                 overridesFor( configuration, toolUrl ) );
             console.log( 'fxeditor-lti: registered ' + configuration.issuer + ' as "' + platform.name + '"' );
-            response.html( service.FINALIZE_REGISTRATION_HTML_SNIPPET );
+            response.html( page( 'fxEditor registered', service.FINALIZE_REGISTRATION_HTML_SNIPPET ) );
         } catch ( err ) {
             console.error( 'fxeditor-lti: registration failed: ' + err.message );
-            response.status( 500 ).html( '<p>fxEditor could not complete the registration: ' +
-                String( err.message ).replace( /[<>&"]/g, '' ) + '</p>' );
+            response.status( 500 ).html( page( 'fxEditor registration failed', '<p>fxEditor could not complete the registration: ' +
+                String( err.message ).replace( /[<>&"]/g, '' ) + '</p>' ) );
         }
     } );
 }
