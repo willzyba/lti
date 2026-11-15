@@ -26,7 +26,8 @@ function options( toolUrl ) {
     return {
         name: 'fxEditor',
         url: toolUrl,
-        logo: toolUrl + '/logo.svg',
+        // The fxEditor icon for the LMS's tool list; the fx mark (logo.svg) stays the editor button's.
+        logo: toolUrl + '/logo.png',
         description: 'Write equations in LaTeX or with the toolbar, and insert them into course content.',
         useDeepLinking: true,
         autoActivate: true,

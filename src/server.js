@@ -55,7 +55,7 @@ var PORT = process.env.PORT ? Number( process.env.PORT ) : 3000;
 // This tool's own public address - what LMSs are given to launch it at.
 var TOOL_URL = ( process.env.TOOL_URL || 'http://localhost:' + PORT ).replace( /\/+$/, '' );
 var EQNEDITOR_SERVER = process.env.EQNEDITOR_SERVER || 'fxtex.codecogs.com';
-var RENDER_URL = process.env.EQNEDITOR_RENDER_URL || 'https://latex.codecogs.com';
+var RENDER_URL = process.env.EQNEDITOR_RENDER_URL || 'https://fxtex.codecogs.com';
 var LICENCE_MODE = process.env.LICENCE_MODE === 'enforce' ? 'enforce' : 'log';
 // The fxTeX Pro licence for the tool's own pages: EQNEDITOR_LICENCE, or the file EQNEDITOR_LICENCE_FILE
 // names - which is how a Docker secret arrives (docker-swarm/docker-fxlti.yml), so the key itself
@@ -122,15 +122,19 @@ provider.httpHandler.app.set( 'trust proxy', true );
 
 var VIEWS = path.join( __dirname, '..', 'views' );
 var launchTemplate = fs.readFileSync( path.join( VIEWS, 'launch.html' ), 'utf8' );
-var logo = fs.readFileSync( path.join( VIEWS, 'logo.svg' ) );
+// The fxEditor icon, which LMSs show in their tool lists (/logo.png), and the small fx mark for an
+// editor's toolbar button (/logo.svg), as every other fxEditor plugin's button has.
+var logo = fs.readFileSync( path.join( VIEWS, 'logo.png' ) );
+var buttonIcon = fs.readFileSync( path.join( VIEWS, 'logo.svg' ) );
 
-// Shown on the LMS's own pages (its tool list, its editor's button), so it must be embeddable
-// from any origin - the helmet defaults ltijs applies say same-origin only.
+// Both are shown on the LMS's own pages, so must be embeddable from any origin - the helmet
+// defaults ltijs applies say same-origin only.
+var IMAGE_HEADERS = { 'Cache-Control': 'public, max-age=86400', 'Cross-Origin-Resource-Policy': 'cross-origin' };
+provider.httpHandler.app.get( '/logo.png', function ( request, response ) {
+    response.type( 'image/png' ).set( IMAGE_HEADERS ).send( logo );
+} );
 provider.httpHandler.app.get( '/logo.svg', function ( request, response ) {
-    response.type( 'image/svg+xml' ).set( {
-        'Cache-Control': 'public, max-age=86400',
-        'Cross-Origin-Resource-Policy': 'cross-origin'
-    } ).send( logo );
+    response.type( 'image/svg+xml' ).set( IMAGE_HEADERS ).send( buttonIcon );
 } );
 provider.httpHandler.app.get( '/health', function ( request, response ) {
     response.type( 'text/plain' ).send( 'ok' );

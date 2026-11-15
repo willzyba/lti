@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/willzyba/lti/main/screenshots/icon.png" alt="" width="96" align="right">
+
 # fxEditor for learning platforms (LTI 1.3)
 
 fxEditor as a single **LTI 1.3 Advantage** tool. Learning platforms share a standard for plugging
@@ -192,7 +194,7 @@ Student Data Privacy pages on fxeditor.codecogs.com describe; keep them in step.
 | `EQNEDITOR_LICENCE` | *(empty)* | fxTeX Pro licence for the tool's own address. |
 | `EQNEDITOR_LICENCE_FILE` | *(unset)* | A file holding that licence instead - a Docker secret in production (`docker-swarm/docker-fxlti.yml`), so the key is never committed. |
 | `EQNEDITOR_SERVER` | `fxtex.codecogs.com` | Where the editor is loaded from. |
-| `EQNEDITOR_RENDER_URL` | `https://latex.codecogs.com` | Where equation images are rendered - and the only host `/insert` accepts images from. |
+| `EQNEDITOR_RENDER_URL` | `https://fxtex.codecogs.com` | Where equation images are rendered - and the only host `/insert` accepts images from. |
 | `EQNEDITOR_SHOW_LATEX` | `false` | Show the LaTeX pane by default. |
 | `EQNEDITOR_DESIGN` | *(none)* | The `design` option, as JSON. |
 | `PLATFORMS_FILE` / `PLATFORMS_JSON` | `./platforms.json` | Manual registrations. |
