@@ -7,7 +7,8 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "MONGO_URL=mongodb://127.0.0.1:27017/eqneditor-lti node src/server.js"
+    "dev": "MONGO_URL=mongodb://127.0.0.1:27017/eqneditor-lti node src/server.js",
+    "add-platform": "node src/add-platform.js"
   },
   "author": "CodeCogs, Zyba Ltd.",
   "license": "MIT",
