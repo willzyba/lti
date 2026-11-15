@@ -9,7 +9,7 @@
     "start": "node src/server.js",
     "dev": "MONGO_URL=mongodb://127.0.0.1:27017/eqneditor-lti node src/server.js"
   },
-  "author": "CodeCogs",
+  "author": "CodeCogs, Zyba Ltd.",
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.4.5",

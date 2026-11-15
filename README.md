@@ -48,9 +48,7 @@ fxEditor licence, recognised in either of two ways:
 - **by address** - the platform's own address (for example `yourschool.instructure.com`) is added
   as a domain on the licence.
 
-Get a licence from https://fxeditor.codecogs.com/purchase (paid plans and a free trial); teachers
-and students can have a free individual licence from https://fxeditor.codecogs.com/academic. Keys
-and their domains are managed in the licence manager at https://fxeditor.codecogs.com/login.
+Get the licence from https://fxeditor.codecogs.com/purchase.
 
 ## Installing from git (running it yourself)
 
@@ -80,8 +78,11 @@ Every setting is in *Configuration* below.
 
 ## Licence
 
-The tool's code is copyright CodeCogs, released under the MIT licence (as declared in
-`package.json`). fxTeX Pro, which draws the equations, is a licensed CodeCogs service.
+Copyright (c) 2026 CodeCogs, Zyba Ltd.
+
+The tool's code is released under the MIT licence - see
+[`LICENSE`](https://github.com/willzyba/lti/blob/main/LICENSE). fxTeX Pro, which draws the
+equations, is a licensed CodeCogs service.
 
 ---
 
