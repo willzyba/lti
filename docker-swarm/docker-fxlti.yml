@@ -53,7 +53,7 @@ services:
             # From a Docker secret, never this file, which is public. Created once on codecogs1:
             #   printf %s 'fx_pk_...' | docker secret create fxlti_licence -
             EQNEDITOR_LICENCE_FILE: /run/secrets/fxlti_licence
-            EQNEDITOR_SERVER: fxtex.codecogs.com
+            EQNEDITOR_SERVER: https://fxtex.codecogs.com
             # log: record each deployment's use and licence, refuse nobody. enforce: an unlicensed
             # deployment is shown how to get licensed instead of the editor.
             LICENCE_MODE: log

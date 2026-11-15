@@ -54,7 +54,7 @@ if ( !process.env.MONGO_URL ) {
 var PORT = process.env.PORT ? Number( process.env.PORT ) : 3000;
 // This tool's own public address - what LMSs are given to launch it at.
 var TOOL_URL = ( process.env.TOOL_URL || 'http://localhost:' + PORT ).replace( /\/+$/, '' );
-var EQNEDITOR_SERVER = process.env.EQNEDITOR_SERVER || 'fxtex.codecogs.com';
+var EQNEDITOR_SERVER = process.env.EQNEDITOR_SERVER || 'https://fxtex.codecogs.com';
 var RENDER_URL = process.env.EQNEDITOR_RENDER_URL || 'https://fxtex.codecogs.com';
 var LICENCE_MODE = process.env.LICENCE_MODE === 'enforce' ? 'enforce' : 'log';
 // The fxTeX Pro licence for the tool's own pages: EQNEDITOR_LICENCE, or the file EQNEDITOR_LICENCE_FILE
