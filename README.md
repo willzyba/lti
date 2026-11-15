@@ -29,16 +29,28 @@ and keeps none; see *Personal data* below.
 
 ## Using the hosted tool (LMS administrators)
 
-- **Moodle, Canvas, Brightspace** - register it with LTI Dynamic Registration: paste
-  `https://lti.codecogs.com/register` into the platform (Moodle: *Site administration > Plugins >
-  Activity modules > External tool > Manage tools*; Canvas: *Admin > Developer Keys > + LTI
-  Registration*; Brightspace: *Manage Extensibility > LTI Advantage > Register Tool*). The platform
-  and the tool exchange everything else themselves.
-- **Blackboard, Schoology, or a platform without Dynamic Registration** - register an LTI 1.3 tool
-  by hand with login URL `https://lti.codecogs.com/login`, launch/redirect URL
-  `https://lti.codecogs.com/launch` and keyset URL `https://lti.codecogs.com/keys`, and
-  [contact us](https://fxeditor.codecogs.com/contact) with the client ID and endpoints your
-  platform issues, so we can add them on our side.
+CodeCogs runs the tool at **https://lti.codecogs.com** - nothing to install on your side. The full
+guide, step by step for each LMS, is at https://fxplugins.codecogs.com/docs/lti.html#setup.
+
+1. **Get a licence** from https://fxeditor.codecogs.com/purchase (a 30-day trial, then a purchased
+   licence) - see *Licence key* below.
+2. **Register the tool:**
+   - **Moodle, Canvas, Brightspace** - LTI Dynamic Registration: paste
+     `https://lti.codecogs.com/register` into the LMS (Moodle: *Site administration > Plugins >
+     Activity modules > External tool > Manage tools*, *Tool URL*, *Add LTI Advantage*; Canvas:
+     *Admin > Developer Keys > + Developer Key > + LTI Registration*; Brightspace: *Manage
+     Extensibility > LTI Advantage > Register Tool*, *Dynamic*). The LMS and the tool exchange
+     everything else themselves.
+   - **Blackboard, Schoology** - the tool is registered once by CodeCogs in their developer
+     portals, and institutions add it by its ID: [contact us](https://fxeditor.codecogs.com/contact)
+     for it. (Blackboard: *Administrator Panel > LTI Tool Providers > Register LTI 1.3/Advantage
+     Tool*, with that ID as the Client ID.)
+   - **Any other LTI 1.3 platform** - register it by hand with login URL
+     `https://lti.codecogs.com/login`, launch/redirect URL `https://lti.codecogs.com/launch` and
+     keyset URL `https://lti.codecogs.com/keys`, and [send us](https://fxeditor.codecogs.com/contact)
+     the client ID and endpoints your platform issues, so we can add it on our side.
+3. **Make it available** to courses as for any LTI Advantage tool (Canvas: turn the developer key
+   *On* and install the app by its client ID; Moodle: show it in the activity chooser).
 
 ## Licence key
 
@@ -109,6 +121,12 @@ about ltijs) describe. Every ltijs call in `src/` was checked against the instal
 - The stored launch token: no name, email, `ext` or course title in it.
 - The deployment record: launches and inserts counted by month, licence looked up.
 
+**The hosted tool at https://lti.codecogs.com** (1.0.05, November 2026), with a stand-in LTI 1.3
+platform registered by hand (`src/add-platform.js`, its key inline): the OIDC login, the launch -
+in a real browser, the signed state recovered from localStorage by ltijs' own page, as it must be
+without cookies - the editor rendering under the tool's licence, and Insert's signed Deep Linking
+response posted back to the platform. The stored launch kept no name, email or course title.
+
 **Not yet tried against** Canvas, Blackboard, Brightspace or Schoology - no sandbox for any of
 them yet. Canvas's registration takes its own extras (see `src/registration.js`), unverified.
 
@@ -119,7 +137,8 @@ src/server.js         Provider, launches, /config, /insert, /logo.svg, /health.
 src/registration.js   Dynamic Registration at /register - what the tool asks the LMS for.
 src/deployments.js    One record per LMS deployment: usage by month, and its licence.
 src/content.js        The one Deep Linking content item an equation becomes.
-src/platforms.js      Manual registrations, from platforms.json (or PLATFORMS_JSON).
+src/platforms.js      Manual registrations, from platforms.json (or PLATFORMS_JSON), at startup.
+src/add-platform.js   Manual registrations added to (or removed from) a running deployment.
 views/launch.html     The editor page - the same EqEditor UI every other adapter embeds.
 ```
 
@@ -138,9 +157,20 @@ views/launch.html     The editor page - the same EqEditor UI every other adapter
   Registrations are active at once; whether an institution may *use* the tool is a licensing
   question, answered at launch.
 - **Manual registration** (Blackboard, Schoology, or any LMS without Dynamic Registration): the
-  LMS's values go into `platforms.json` - see `platforms.example.json` - and the tool's into the
-  LMS: login `https://lti.codecogs.com/login`, launch/redirect `https://lti.codecogs.com/launch`,
-  keys `https://lti.codecogs.com/keys`.
+  tool's values go into the LMS - login `https://lti.codecogs.com/login`, launch/redirect
+  `https://lti.codecogs.com/launch`, keys `https://lti.codecogs.com/keys` - and the LMS's into the
+  tool, in the format of `platforms.example.json`. Blackboard and Schoology each need this only
+  once, for every institution: the tool is registered in their developer portals (Blackboard's
+  Developer Portal issues the Application ID institutions enter). In a running deployment, add or
+  remove a platform without a restart - it goes into MongoDB, where ltijs keeps every
+  registration, so one run serves every replica:
+
+  ```bash
+  docker exec -i $(docker ps -qf name=fxlti_lti | head -1) node src/add-platform.js < platform.json
+  docker exec $(docker ps -qf name=fxlti_lti | head -1) node src/add-platform.js --remove <platform url> <client id>
+  ```
+
+  `platforms.json` (or `PLATFORMS_JSON`) does the same at startup, for a deployment of your own.
 
 ### A launch
 
