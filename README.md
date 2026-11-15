@@ -116,10 +116,10 @@ Student Data Privacy pages on fxeditor.codecogs.com describe; keep them in step.
 ## Testing locally
 
 Against the Moodle 4.5 test site in `/Users/will/Data/Vultr/moodle-dev` (see
-`../moodle/tiny_eqneditor/README.md`):
+moodle-tiny_eqneditor's README.md):
 
 1. MongoDB: `docker run -d --name fxlti-mongo -p 127.0.0.1:27017:27017 mongo:7`.
-2. The tool: the `fxeditor-lti` entry in `../.claude/launch.json` (`TOOL_URL=http://localhost:3000`).
+2. The tool: the `fxeditor-lti` entry in fxPlugins' `.claude/launch.json` (this repository is its `lti/` submodule) (`TOOL_URL=http://localhost:3000`).
 3. Moodle must reach the tool at the *same* address the browser uses. Inside the Moodle container
    `localhost` is the container, so a forwarder shares its network and passes `localhost:3000` on
    to the Mac:

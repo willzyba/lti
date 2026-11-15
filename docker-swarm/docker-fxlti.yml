@@ -1,4 +1,4 @@
-# Docker Swarm stack for lti.codecogs.com - fxEditor's LTI 1.3 tool (lti/, see lti/README.md) and
+# Docker Swarm stack for lti.codecogs.com - fxEditor's LTI 1.3 tool (this repository - see README.md) and
 # the MongoDB it keeps LMS registrations, launch tokens and deployment records in.
 #
 # fxnginx routes lti.codecogs.com to fxlti_lti:3000 on the ingress-routing overlay and terminates
@@ -49,7 +49,7 @@ services:
             TOOL_URL: https://lti.codecogs.com
             # fxTeX Pro for the tool's own pages - CodeCogs' own key, for codecogs.com addresses.
             # Every launch page is on lti.codecogs.com whichever institution opened it; who an
-            # institution is licensed as is worked out per deployment instead (lti/src/deployments.js).
+            # institution is licensed as is worked out per deployment instead (src/deployments.js).
             EQNEDITOR_LICENCE: "***REMOVED***"
             EQNEDITOR_SERVER: fxtex.codecogs.com
             # log: record each deployment's use and licence, refuse nobody. enforce: an unlicensed
