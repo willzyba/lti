@@ -106,6 +106,7 @@ Student Data Privacy pages on fxeditor.codecogs.com describe; keep them in step.
 | `LICENCE_MODE` | `log` | `log` or `enforce` - see above. |
 | `FXTEX_ORIGIN` | `https://fxtex.codecogs.com` | Where licences are checked. |
 | `EQNEDITOR_LICENCE` | *(empty)* | fxTeX Pro licence for the tool's own address. |
+| `EQNEDITOR_LICENCE_FILE` | *(unset)* | A file holding that licence instead - a Docker secret in production (`docker-swarm/docker-fxlti.yml`), so the key is never committed. |
 | `EQNEDITOR_SERVER` | `fxtex.codecogs.com` | Where the editor is loaded from. |
 | `EQNEDITOR_RENDER_URL` | `https://latex.codecogs.com` | Where equation images are rendered - and the only host `/insert` accepts images from. |
 | `EQNEDITOR_SHOW_LATEX` | `false` | Show the LaTeX pane by default. |

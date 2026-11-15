@@ -50,11 +50,15 @@ services:
             # fxTeX Pro for the tool's own pages - CodeCogs' own key, for codecogs.com addresses.
             # Every launch page is on lti.codecogs.com whichever institution opened it; who an
             # institution is licensed as is worked out per deployment instead (src/deployments.js).
-            EQNEDITOR_LICENCE: "***REMOVED***"
+            # From a Docker secret, never this file, which is public. Created once on codecogs1:
+            #   printf %s 'fx_pk_...' | docker secret create fxlti_licence -
+            EQNEDITOR_LICENCE_FILE: /run/secrets/fxlti_licence
             EQNEDITOR_SERVER: fxtex.codecogs.com
             # log: record each deployment's use and licence, refuse nobody. enforce: an unlicensed
             # deployment is shown how to get licensed instead of the editor.
             LICENCE_MODE: log
+        secrets:
+            - fxlti_licence
         healthcheck:
             test: wget -qO - http://127.0.0.1:3000/health || exit 1
             interval: 30s
@@ -98,3 +102,8 @@ networks:
     # The tool and MongoDB only.
     data:
         driver: overlay
+
+secrets:
+    # Created out of band, never in this file - see EQNEDITOR_LICENCE_FILE above.
+    fxlti_licence:
+        external: true

@@ -57,6 +57,17 @@ var TOOL_URL = ( process.env.TOOL_URL || 'http://localhost:' + PORT ).replace( /
 var EQNEDITOR_SERVER = process.env.EQNEDITOR_SERVER || 'fxtex.codecogs.com';
 var RENDER_URL = process.env.EQNEDITOR_RENDER_URL || 'https://latex.codecogs.com';
 var LICENCE_MODE = process.env.LICENCE_MODE === 'enforce' ? 'enforce' : 'log';
+// The fxTeX Pro licence for the tool's own pages: EQNEDITOR_LICENCE, or the file EQNEDITOR_LICENCE_FILE
+// names - which is how a Docker secret arrives (docker-swarm/docker-fxlti.yml), so the key itself
+// never appears in a file that is committed.
+var LICENCE = process.env.EQNEDITOR_LICENCE || '';
+if ( !LICENCE && process.env.EQNEDITOR_LICENCE_FILE ) {
+    try {
+        LICENCE = fs.readFileSync( process.env.EQNEDITOR_LICENCE_FILE, 'utf8' ).trim();
+    } catch ( err ) {
+        console.error( 'fxeditor-lti: cannot read EQNEDITOR_LICENCE_FILE: ' + err.message );
+    }
+}
 // Where licences are checked: fxtex's /diagnostics.json.
 var FXTEX_ORIGIN = ( process.env.FXTEX_ORIGIN || 'https://fxtex.codecogs.com' ).replace( /\/+$/, '' );
 
@@ -222,7 +233,7 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
         renderUrl: RENDER_URL,
         // Passed straight to EqEditor.init(). Every page here is on this tool's own address, so
         // this is the licence for that address - CodeCogs' own - whichever institution launched.
-        licence: process.env.EQNEDITOR_LICENCE || '',
+        licence: LICENCE,
         // How the editor looks, as JSON - see the `design` option in the README.
         design: parseDesign( process.env.EQNEDITOR_DESIGN ),
         // The maths view is the default and, by far, the more common thing to want on screen -
