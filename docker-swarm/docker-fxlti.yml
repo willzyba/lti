@@ -16,7 +16,7 @@ version: "3.9"
 
 services:
     lti:
-        image: willzyba/fxeditor-lti:1.0.04
+        image: willzyba/fxeditor-lti:1.0.05
         networks:
             - ingress
             - data
