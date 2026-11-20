@@ -64,6 +64,11 @@ fxEditor licence, recognised in either of two ways:
 
 Get the licence from https://fxeditor.codecogs.com/purchase.
 
+A licensed institution's editor also has fxTeX Pro's chemistry and picture packages: chemical
+formulae (`\ce`), chemical structures and reaction schemes (`\chemfig`), the physics package and
+LaTeX's `picture` environment. The tool's `/config` names them for the editor when the launching
+institution is licensed, and none otherwise.
+
 ## Installing from git (running it yourself)
 
 It is a Node.js server (Node 22), and needs a MongoDB database and a public HTTPS address -

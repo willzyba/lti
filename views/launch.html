@@ -113,11 +113,12 @@
         // launch page's lifetime, even once fxeditor.api.min.js itself has loaded. Called once,
         // right after the script loads; an empty licence is the normal, expected state until a
         // real one is configured.
-        // fxTeX Pro's optional packages are off unless named here: without them \ce, \chemfig,
-        // \dv and the picture environment were unknown commands, shown as their letters.
-        function ensureInit( licence ) {
+        // `packages`: fxTeX Pro's optional packages, which are off unless named - /config names them
+        // all for a licensed institution, none otherwise, when \ce, \chemfig, \dv and the picture
+        // environment are unknown commands.
+        function ensureInit( licence, packages ) {
             return ( typeof EqEditor.init === 'function' )
-                ? EqEditor.init( { licence: licence || '', packages: [ 'mhchem', 'chemfig', 'physics', 'picture' ] } ).catch( function ( err ) {
+                ? EqEditor.init( { licence: licence || '', packages: packages || [] } ).catch( function ( err ) {
                     window.console && console.warn( 'fxTeX Pro: ' + ( err && err.message || err ) );
                 } )
                 : Promise.resolve();
@@ -762,7 +763,7 @@
                     'Build your equation, then press Insert to get an image you can copy into your content.';
 
                 return loadScript( serverOrigin( config.server ) + '/fxeditor.api.min.js' )
-                    .then( function () { return ensureInit( config.licence ); } )
+                    .then( function () { return ensureInit( config.licence, config.packages ); } )
                     .then( function () { mount( config.server ); } );
             } )
             .catch( function ( err ) { setStatus( err.message ); } );

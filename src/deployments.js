@@ -151,4 +151,13 @@ async function recordInsert( idToken ) {
     await Deployment.updateOne( { _id: deploymentKey( idToken.platform ) }, { $inc: inc } );
 }
 
-module.exports = { recordLaunch: recordLaunch, recordInsert: recordInsert, lmsHost: lmsHost, Deployment: Deployment };
+/**
+ * Whether the institution behind a launch is licensed, as last recorded by recordLaunch() - the
+ * launch itself has recorded it by the time its page asks. False when it is not, or not known.
+ */
+async function isLicensed( idToken ) {
+    var deployment = await Deployment.findById( deploymentKey( idToken.platform ), { licence: 1 } ).lean();
+    return !!( deployment && deployment.licence && deployment.licence.licensed );
+}
+
+module.exports = { recordLaunch: recordLaunch, recordInsert: recordInsert, isLicensed: isLicensed, lmsHost: lmsHost, Deployment: Deployment };

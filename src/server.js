@@ -57,6 +57,9 @@ var TOOL_URL = ( process.env.TOOL_URL || 'http://localhost:' + PORT ).replace( /
 var EQNEDITOR_SERVER = process.env.EQNEDITOR_SERVER || 'https://fxtex.codecogs.com';
 var RENDER_URL = process.env.EQNEDITOR_RENDER_URL || 'https://fxtex.codecogs.com';
 var LICENCE_MODE = process.env.LICENCE_MODE === 'enforce' ? 'enforce' : 'log';
+// fxTeX Pro's optional packages: chemical formulae (\ce), chemical structures (\chemfig), the physics
+// package (\dv and the rest) and the picture environment - for licensed institutions (see /config).
+var PACKAGES = [ 'mhchem', 'chemfig', 'physics', 'picture' ];
 // The fxTeX Pro licence for the tool's own pages: EQNEDITOR_LICENCE, or the file EQNEDITOR_LICENCE_FILE
 // names - which is how a Docker secret arrives (docker-swarm/docker-fxlti.yml), so the key itself
 // never appears in a file that is committed.
@@ -231,6 +234,15 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
         return;
     }
 
+    // fxTeX Pro's chemistry, physics and picture packages are for licensed institutions: the page
+    // opens fxTeX Pro with CodeCogs' own key, whoever launched it, so it is told which to use.
+    var licensed = false;
+    try {
+        licensed = await deployments.isLicensed( context.idToken );
+    } catch ( err ) {
+        console.error( 'fxeditor-lti: could not read the licence: ' + err.message );
+    }
+
     response.json( {
         isDeepLinking: context.deepLinking.isAvailable(),
         server: EQNEDITOR_SERVER,
@@ -238,6 +250,8 @@ provider.httpHandler.registerRoute( '/config', [ HttpMethod.Get ], async functio
         // Passed straight to EqEditor.init(). Every page here is on this tool's own address, so
         // this is the licence for that address - CodeCogs' own - whichever institution launched.
         licence: LICENCE,
+        // The optional packages to turn on: all of them for a licensed institution, else none.
+        packages: licensed ? PACKAGES : [],
         // How the editor looks, as JSON - see the `design` option in the README.
         design: parseDesign( process.env.EQNEDITOR_DESIGN ),
         // The maths view is the default and, by far, the more common thing to want on screen -
