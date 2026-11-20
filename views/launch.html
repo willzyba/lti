@@ -113,9 +113,11 @@
         // launch page's lifetime, even once fxeditor.api.min.js itself has loaded. Called once,
         // right after the script loads; an empty licence is the normal, expected state until a
         // real one is configured.
+        // fxTeX Pro's optional packages are off unless named here: without them \ce, \chemfig,
+        // \dv and the picture environment were unknown commands, shown as their letters.
         function ensureInit( licence ) {
             return ( typeof EqEditor.init === 'function' )
-                ? EqEditor.init( { licence: licence || '' } ).catch( function ( err ) {
+                ? EqEditor.init( { licence: licence || '', packages: [ 'mhchem', 'chemfig', 'physics', 'picture' ] } ).catch( function ( err ) {
                     window.console && console.warn( 'fxTeX Pro: ' + ( err && err.message || err ) );
                 } )
                 : Promise.resolve();
